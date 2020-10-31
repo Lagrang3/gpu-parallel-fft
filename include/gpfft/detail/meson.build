@@ -1,1 +1,3 @@
-headers+=[files(['fftw_wrapper.hpp','mpi_handler.hpp','parallel_buffer.hpp'])]
+headers+=[files([
+    'fftw_wrapper.hpp',
+    'parallel_buffer_impl.hpp'])]
