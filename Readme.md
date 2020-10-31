@@ -16,7 +16,8 @@ Requirements
 - any MPI library, version?
 - `cuda`, version?
 - `meson` build system, version?
-- FFTW3, only for testing correctedness.
+- `FFTW3`, only for testing correctedness.
+- `Boost::test` for unit testing.
 
 
 License
