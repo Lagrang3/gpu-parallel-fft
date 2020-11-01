@@ -1,17 +1,8 @@
 #pragma once
 
-#include <algorithm>
 #include <array>
 #include <boost/mpi.hpp>
-#include <cassert>
-#include <iostream>
-#include <memory>
 #include <valarray>
-
-#define for_xyz(i, j, k, nloc)                                                 \
-    for (size_t i = 0; i < nloc[0]; ++i)                                       \
-        for (size_t j = 0; j < nloc[1]; ++j)                                   \
-            for (size_t k = 0; k < nloc[2]; ++k)
 
 #define _index(i, j, k, nloc) k + nloc[2] * (j + nloc[1] * i)
 

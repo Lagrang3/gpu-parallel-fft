@@ -1,12 +1,9 @@
 #pragma once
 
-#include <algorithm>
 #include <array>
 #include <boost/mpi.hpp>
 #include <boost/serialization/vector.hpp>
-#include <cassert>
 #include <fstream>
-#include <iostream>
 #include <memory>
 #include <valarray>
 
