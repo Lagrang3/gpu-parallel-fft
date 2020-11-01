@@ -1,10 +1,9 @@
 #pragma once
 
-#include "fft.h"
-#include "mpi_handler.h"
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <valarray>
@@ -19,7 +18,7 @@
 namespace gpfft
 {
     template <class T>
-    void parallel_buff_3D::transpose_reorder()
+    void parallel_buff_3D<T>::transpose_reorder()
     {
         size_t nproc = com.size();
 
@@ -41,7 +40,8 @@ namespace gpfft
         (*this) = std::move(tmp);
     }
 
-    void parallel_buff_3D::compute_start_loc()
+    template <class T>
+    void parallel_buff_3D<T>::compute_start_loc()
     {
         int r(N[0] % com.size()), q(N[0] / com.size());
         N_loc[0] = q + (com.rank() < r);
@@ -52,7 +52,7 @@ namespace gpfft
     }
 
     template <class T>
-    void parallel_buff_3D::transpose_yz()
+    void parallel_buff_3D<T>::transpose_yz()
     {
         std::valarray<T> tmp(get_local_size());
         std::array<size_t, 3> nloc{N_loc[0], N_loc[2], N_loc[1]};
@@ -66,7 +66,7 @@ namespace gpfft
     }
 
     template <class T>
-    void parallel_buff_3D::transpose_xz()
+    void parallel_buff_3D<T>::transpose_xz()
     {
         std::valarray<T> tmp(get_local_size());
         std::array<size_t, 3> nloc{N_loc[2], N_loc[1], N_loc[0]};
@@ -84,7 +84,7 @@ namespace gpfft
     }
 
     template <class T>
-    void parallel_buff_3D::transpose_xy()
+    void parallel_buff_3D<T>::transpose_xy()
     {
         transpose_yz();
         transpose_xz();
@@ -157,7 +157,7 @@ namespace gpfft
         if (lpos >= 0 and lpos < N_loc[0])
             sender = com.rank();
 
-        MPI_Allreduce(&sender, &sender, 1, MPI_INT, MPI_SUM, com.get_com());
+        MPI_Allreduce(&sender, &sender, 1, MPI_INT, MPI_SUM, com);
 
         if (sender == com.rank())
         {
@@ -169,13 +169,12 @@ namespace gpfft
         if (sender != writer)
         {
             if (sender == com.rank())
-                MPI_Send(buf, Ntot * sizeof(T), MPI_CHAR, writer, 1,
-                         com.get_com());
+                MPI_Send(buf, Ntot * sizeof(T), MPI_CHAR, writer, 1, com);
             if (writer == com.rank())
-                MPI_Recv(buf, Ntot * sizeof(T), MPI_CHAR, sender, 1,
-                         com.get_com(), MPI_STATUS_IGNORE);
+                MPI_Recv(buf, Ntot * sizeof(T), MPI_CHAR, sender, 1, com,
+                         MPI_STATUS_IGNORE);
         }
-        MPI_Barrier(com.get_com());
+        MPI_Barrier(com);
     }
 
     template <class T>
@@ -195,7 +194,7 @@ namespace gpfft
                 ofs << '\n';
             }
         }
-        MPI_Barrier(com.get_com());
+        MPI_Barrier(com);
     }
 
     template <>
@@ -203,7 +202,7 @@ namespace gpfft
     {
         double s_loc = 0, s_tot = 0;
         s_loc = std::valarray<double>::sum();
-        MPI_Allreduce(&s_loc, &s_tot, 1, MPI_DOUBLE, MPI_SUM, com.get_com());
+        MPI_Allreduce(&s_loc, &s_tot, 1, MPI_DOUBLE, MPI_SUM, com);
         return s_tot;
     }
 
@@ -238,16 +237,15 @@ namespace gpfft
         std::unique_ptr<double[]> sendbuf{new double[Ntot]},
             recvbuf{new double[Ntot]};
 
-        for (size_t i = 0; i < Ntot; ++i)
+        for (int i = 0; i < Ntot; ++i)
             sendbuf[i] = (*this)[i];
 
         MPI_Alltoall(sendbuf.get(), Ntot / com.size(), MPI_DOUBLE,
-                     recvbuf.get(), Ntot / com.size(), MPI_DOUBLE,
-                     com.get_com());
+                     recvbuf.get(), Ntot / com.size(), MPI_DOUBLE, com);
 
-        for (size_t i = 0; i < Ntot; ++i)
+        for (int i = 0; i < Ntot; ++i)
             (*this)[i] = recvbuf[i];
-        MPI_Barrier(com.get_com());
+        MPI_Barrier(com);
     }
 
     template <>
@@ -258,18 +256,17 @@ namespace gpfft
         std::unique_ptr<double[]> sendbuf{new double[2 * Ntot]},
             recvbuf{new double[2 * Ntot]};
 
-        for (size_t i = 0; i < Ntot; ++i)
+        for (int i = 0; i < Ntot; ++i)
             sendbuf[2 * i] = (*this)[i].real(),
                         sendbuf[2 * i + 1] = (*this)[i].imag();
 
         MPI_Alltoall(sendbuf.get(), 2 * Ntot / com.size(), MPI_DOUBLE,
-                     recvbuf.get(), 2 * Ntot / com.size(), MPI_DOUBLE,
-                     com.get_com());
+                     recvbuf.get(), 2 * Ntot / com.size(), MPI_DOUBLE, com);
 
-        for (size_t i = 0; i < Ntot; ++i)
+        for (int i = 0; i < Ntot; ++i)
             (*this)[i] =
                 std::complex<double>{recvbuf[2 * i], recvbuf[2 * i + 1]};
-        MPI_Barrier(com.get_com());
+        MPI_Barrier(com);
     }
     template <>
     void parallel_buff_3D<int>::all_to_all()
@@ -278,16 +275,16 @@ namespace gpfft
 
         std::unique_ptr<int[]> sendbuf{new int[Ntot]}, recvbuf{new int[Ntot]};
 
-        for (size_t i = 0; i < Ntot; ++i)
+        for (int i = 0; i < Ntot; ++i)
             sendbuf[i] = (*this)[i];
 
         MPI_Alltoall(sendbuf.get(), Ntot / com.size(), MPI_INT, recvbuf.get(),
-                     Ntot / com.size(), MPI_INT, com.get_com());
+                     Ntot / com.size(), MPI_INT, com);
 
-        for (size_t i = 0; i < Ntot; ++i)
+        for (int i = 0; i < Ntot; ++i)
             (*this)[i] = recvbuf[i];
 
-        MPI_Barrier(com.get_com());
+        MPI_Barrier(com);
     }
 
 }  // namespace gpfft

@@ -1,9 +1,8 @@
 #pragma once
 
-#include "fft.h"
-#include "mpi_handler.h"
 #include <algorithm>
 #include <array>
+#include <boost/mpi.hpp>
 #include <cassert>
 #include <iostream>
 #include <memory>
@@ -21,7 +20,8 @@ namespace gpfft
     template <class T>
     class parallel_buff_3D : public std::valarray<T>
     {
-        mpi_comm com;
+        using communicator = boost::mpi::communicator;
+        communicator com;
         std::array<size_t, 3> N;
 
         void transpose_reorder();
@@ -36,21 +36,14 @@ namespace gpfft
         std::array<size_t, 3> N_loc, start_loc;
 
        private:
-        void compute_start_loc()
-        {
-            int r(N[0] % com.size()), q(N[0] / com.size());
-            N_loc[0] = q + (com.rank() < r);
-            N_loc[1] = N[1];
-            N_loc[2] = N[2];
-            start_loc[0] = com.rank() * q + std::min(com.rank(), r);
-            start_loc[1] = start_loc[2] = 0;
-        }
+        void compute_start_loc();
 
        public:
         using std::valarray<T>::operator=;
         using std::valarray<T>::operator*=;
 
-        parallel_buff_3D(const mpi_comm& in_com, const std::array<size_t, 3>& n)
+        parallel_buff_3D(const communicator& in_com,
+                         const std::array<size_t, 3>& n)
             : com(in_com), N(n)
         {
             compute_start_loc();
@@ -70,9 +63,8 @@ namespace gpfft
         auto get_nloc() const { return N_loc; }
         auto get_ploc() const { return start_loc; }
 
-        MPI_Comm get_com() const { return com.get_com(); }
-
-        mpi_comm get_comm() const { return com; }
+        communicator get_comm() const { return com; }
+        // MPI_Comm get_raw_comm() const { return MPI_Comm(com); }
 
         size_t get_local_size() const { return std::valarray<T>::size(); }
         T sum() const;
@@ -88,3 +80,5 @@ namespace gpfft
     };
 
 }  // namespace gpfft
+
+#include <gpfft/detail/parallel_buffer_impl.hpp>

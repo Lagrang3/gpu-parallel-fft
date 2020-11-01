@@ -5,6 +5,8 @@ project('gpfft','cpp',
 add_global_arguments(['-Ofast','-march=native' ],language : 'cpp')
 
 cpp=meson.get_compiler('cpp')
+mpi=dependency('mpi',language: 'cpp')
+boost_mpi = dependency('boost',modules: ['mpi'])
 
 headers=[]
 sources=[]
