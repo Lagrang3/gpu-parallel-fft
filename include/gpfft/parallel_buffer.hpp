@@ -2,6 +2,7 @@
 
 #include <array>
 #include <boost/mpi.hpp>
+#include <gpfft/fft_type.hpp>
 #include <valarray>
 
 #define _index(i, j, k, nloc) k + nloc[2] * (j + nloc[1] * i)
@@ -64,8 +65,8 @@ namespace gpfft
         void transpose_xz();
         void transpose_xy();
 
-        /* todo: mpi communication for template T */
-        void FFT3D(const std::array<T, 3> e, const T _1 = T(1));
+        template <FFT_type>
+        void FFT3D();
 
         void report(const char* filename);
     };

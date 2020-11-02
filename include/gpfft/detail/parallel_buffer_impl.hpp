@@ -2,8 +2,11 @@
 
 #include <array>
 #include <boost/mpi.hpp>
+#include <boost/serialization/complex.hpp>
 #include <boost/serialization/vector.hpp>
 #include <fstream>
+#include <gpfft/detail/fftw_wrapper.hpp>
+#include <gpfft/fft_type.hpp>
 #include <memory>
 #include <valarray>
 
@@ -205,25 +208,29 @@ namespace gpfft
     }
 
     template <class T>
-    void parallel_buff_3D<T>::FFT3D(const std::array<T, 3> e, const T _1)
+    template <FFT_type fft>
+    void parallel_buff_3D<T>::FFT3D()
     {
         // FFT on z
         for (size_t i = 0; i < N_loc[0]; ++i)
             for (size_t j = 0; j < N_loc[1]; ++j)
-                FFT(&(*this)(i, j, 0), &(*this)(i, j + 1, 0), e[2], _1);
+                FFTW3<fft>(&(*this)(i, j, 0), &(*this)(i, j + 1, 0),
+                           &(*this)(i, j, 0));
 
         // FFT on y
         transpose_yz();
         for (size_t i = 0; i < N_loc[0]; ++i)
             for (size_t j = 0; j < N_loc[1]; ++j)
-                FFT(&(*this)(i, j, 0), &(*this)(i, j + 1, 0), e[1], _1);
+                FFTW3<fft>(&(*this)(i, j, 0), &(*this)(i, j + 1, 0),
+                           &(*this)(i, j, 0));
         transpose_yz();
 
         // FFT on x
         transpose_xz();
         for (size_t i = 0; i < N_loc[0]; ++i)
             for (size_t j = 0; j < N_loc[1]; ++j)
-                FFT(&(*this)(i, j, 0), &(*this)(i, j + 1, 0), e[0], _1);
+                FFTW3<fft>(&(*this)(i, j, 0), &(*this)(i, j + 1, 0),
+                           &(*this)(i, j, 0));
         transpose_xz();
     }
     template <class T>
