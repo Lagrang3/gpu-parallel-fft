@@ -196,12 +196,11 @@ namespace gpfft
         com.barrier();
     }
 
-    template <>
-    double parallel_buff_3D<double>::sum() const
+    template <class T>
+    T parallel_buff_3D<T>::sum() const
     {
-        double s_loc = 0, s_tot = 0;
-        s_loc = std::valarray<double>::sum();
-        boost::mpi::all_reduce(com, s_loc, s_tot, std::plus<double>());
+        T s_loc = std::valarray<T>::sum(), s_tot{};
+        boost::mpi::all_reduce(com, s_loc, s_tot, std::plus<T>());
         return s_tot;
     }
 
