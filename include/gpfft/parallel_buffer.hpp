@@ -5,8 +5,6 @@
 #include <gpfft/fft_type.hpp>
 #include <valarray>
 
-#define _index(i, j, k, nloc) k + nloc[2] * (j + nloc[1] * i)
-
 namespace gpfft
 {
     template <class T>
@@ -14,25 +12,31 @@ namespace gpfft
     {
         using communicator = boost::mpi::communicator;
         communicator com;
-        std::array<size_t, 3> N;
+        std::array<size_t, 3> N, N_loc, start_loc;
 
         void transpose_reorder();
         void all_to_all();
-        void get_slice(int writer, T* buf, int pos);
-        void write_slice(int writer,
-                         T* buf,
-                         std::ofstream& ofs,
-                         std::string head);
 
-       public:
-        std::array<size_t, 3> N_loc, start_loc;
-
-       private:
         void compute_start_loc();
+
+        inline size_t index(size_t i,
+                            size_t j,
+                            size_t k,
+                            std::array<size_t, 3> nloc) const noexcept
+        {
+            return k + nloc[2] * (j + nloc[1] * i);
+        }
+        inline size_t index(size_t i, size_t j, size_t k) const noexcept
+        {
+            return k + N_loc[2] * (j + N_loc[1] * i);
+        }
 
        public:
         using std::valarray<T>::operator=;
         using std::valarray<T>::operator*=;
+
+        template <FFT_type fft>
+        void local_FFT();
 
         parallel_buff_3D(const communicator& in_com,
                          const std::array<size_t, 3>& n)
@@ -44,11 +48,11 @@ namespace gpfft
 
         T& operator()(size_t x, size_t y, size_t z)
         {
-            return (*this)[_index(x, y, z, N_loc)];
+            return (*this)[index(x, y, z)];
         }
         const T& operator()(size_t x, size_t y, size_t z) const
         {
-            return (*this)[_index(x, y, z, N_loc)];
+            return (*this)[index(x, y, z)];
         }
 
         auto get_N() const { return N; }
@@ -56,7 +60,6 @@ namespace gpfft
         auto get_ploc() const { return start_loc; }
 
         communicator get_comm() const { return com; }
-        // MPI_Comm get_raw_comm() const { return MPI_Comm(com); }
 
         size_t get_local_size() const { return std::valarray<T>::size(); }
         T sum() const;
@@ -67,8 +70,6 @@ namespace gpfft
 
         template <FFT_type>
         void FFT3D();
-
-        void report(const char* filename);
     };
 
 }  // namespace gpfft
