@@ -131,5 +131,5 @@ BOOST_AUTO_TEST_CASE(gpfft_vs_fftw3_parallel)
     fftw_destroy_plan(p);
 
     BOOST_CHECK(math::isnan(diff) == false);
-    BOOST_CHECK_SMALL(diff, 1e-12);
+    BOOST_CHECK_SMALL(diff, 1e-11);
 }

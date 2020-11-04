@@ -5,7 +5,7 @@ mpirun = find_program('mpirun')
 
 
 test_src += [files(
-    '1d-fftw.cu','transpose.cpp','sum.cpp','3d-fftw.cpp')]
+    '1d-fftw.cu','transpose.cpp','sum.cpp','3d-fftw.cu')]
 
 if ( boost.found() and fftw3.found() and boost_ut.found())
     oned_fftw = executable('1d-fftw',['1d-fftw.cu'],
@@ -13,9 +13,9 @@ if ( boost.found() and fftw3.found() and boost_ut.found())
         dependencies: [boost,fftw3,boost_mpi,boost_ut,cuda])
     test('1d-fftw',oned_fftw)
     
-    threed_fftw = executable('3d-fftw',['3d-fftw.cpp'],
+    threed_fftw = executable('3d-fftw',['3d-fftw.cu'],
         include_directories: include,
-        dependencies: [boost,fftw3,boost_mpi,mpi,boost_ut])
+        dependencies: [boost,fftw3,boost_mpi,mpi,boost_ut,cuda])
     test('3D FFT',mpirun,
        args: ['-np','2',threed_fftw.full_path()],
        is_parallel: false)
