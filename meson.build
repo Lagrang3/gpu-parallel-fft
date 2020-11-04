@@ -1,12 +1,15 @@
-project('gpfft','cpp',
+project('gpfft','cpp','cuda',
         default_options : ['cpp_std=c++17',
-        'warning_level=3','optimization=3'],
+        'warning_level=3'],
         version: '0.0.1')
 add_global_arguments(['-Ofast','-march=native' ],language : 'cpp')
+add_global_arguments(['--disable-warnings' ],language : 'cuda')
 
 cpp=meson.get_compiler('cpp')
+nvcc=meson.get_compiler('cuda')
 mpi=dependency('mpi',language: 'cpp')
 boost_mpi = dependency('boost',modules: ['mpi','serialization'])
+cuda = dependency('cuda',modules: ['cufft'])
 
 headers=[]
 sources=[]
