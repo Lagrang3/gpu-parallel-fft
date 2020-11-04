@@ -104,12 +104,13 @@ namespace gpfft
     template <FFT_type fft>
     void parallel_buff_3D<T>::local_FFT()
     {
-        /*
-        for (size_t i = 0; i < N_loc[0]; ++i)
-            for (size_t j = 0; j < N_loc[1]; ++j)
-                FFTW3<fft>(&(*this)(i, j, 0), &(*this)(i, j + 1, 0),
-                           &(*this)(i, j, 0));
-        */
+        // with fftw 1-dim fft
+        // for (size_t i = 0; i < N_loc[0]; ++i)
+        //     for (size_t j = 0; j < N_loc[1]; ++j)
+        //         FFTW3<fft>(&(*this)(i, j, 0), &(*this)(i, j + 1, 0),
+        //                    &(*this)(i, j, 0));
+        
+        // with cufft
         cuFFT<fft>(&((*this)[0]), &((*this)[0]) + this->size(), &((*this)[0]),
                    N_loc[2], N_loc[0] * N_loc[1]);
     }

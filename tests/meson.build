@@ -1,7 +1,4 @@
 boost_ut = dependency('boost',modules: ['unit_test_framework'],required: false)
-boost = dependency('boost',required: false)
-fftw3 = dependency('fftw3',required: false)
-mpirun = find_program('mpirun')
 
 
 test_src += [files(
