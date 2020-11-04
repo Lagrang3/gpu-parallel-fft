@@ -109,7 +109,7 @@ namespace gpfft
         //     for (size_t j = 0; j < N_loc[1]; ++j)
         //         FFTW3<fft>(&(*this)(i, j, 0), &(*this)(i, j + 1, 0),
         //                    &(*this)(i, j, 0));
-        
+
         // with cufft
         cuFFT<fft>(&((*this)[0]), &((*this)[0]) + this->size(), &((*this)[0]),
                    N_loc[2], N_loc[0] * N_loc[1]);
@@ -117,15 +117,36 @@ namespace gpfft
 
     template <class T>
     template <FFT_type fft>
+    void parallel_buff_3D<T>::local_2dFFT()
+    {
+        cuFFT2d<fft>(&((*this)[0]), &((*this)[0]) + this->size(), &((*this)[0]),
+                     N_loc[2], N_loc[0]);
+    }
+
+    // template <class T>
+    // template <FFT_type fft>
+    // void parallel_buff_3D<T>::FFT3D()
+    // {
+    //     // FFT on z
+    //     local_FFT<fft>();
+
+    //     // FFT on y
+    //     transpose_yz();
+    //     local_FFT<fft>();
+    //     transpose_yz();
+
+    //     // FFT on x
+    //     transpose_xz();
+    //     local_FFT<fft>();
+    //     transpose_xz();
+    // }
+
+    template <class T>
+    template <FFT_type fft>
     void parallel_buff_3D<T>::FFT3D()
     {
-        // FFT on z
-        local_FFT<fft>();
-
-        // FFT on y
-        transpose_yz();
-        local_FFT<fft>();
-        transpose_yz();
+        // FFT on z and y
+        local_2dFFT<fft>();
 
         // FFT on x
         transpose_xz();

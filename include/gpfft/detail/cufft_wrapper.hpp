@@ -58,4 +58,36 @@ namespace gpfft
         return B;
     }
 
+    // Nbatch of Nsize^2 2d transforms
+    template <FFT_type T, class cRAiterator, class RAiterator>
+    void cuFFT2d(cRAiterator in_beg,
+                 cRAiterator in_end,
+                 RAiterator out_beg,
+                 int Nsize,
+                 int Nbatch)
+    {
+        const int n = std::distance(in_beg, in_end);
+        assert(n == Nsize * Nsize * Nbatch);
+        cufftHandle plan;
+        thrust::device_vector<std::complex<double>> D(in_beg, in_end);
+
+        int N[2] = {Nsize, Nsize};
+        int idist{Nsize * Nsize}, odist{Nsize * Nsize};
+        int istride{1}, ostride{1};
+        int iembed[2] = {Nsize, Nsize};
+        int oembed[2] = {Nsize, Nsize};
+
+        cufftPlanMany(&plan, 2, N, iembed, istride, idist, oembed, ostride,
+                      odist, CUFFT_Z2Z, Nbatch);
+
+        cufftExecZ2Z(plan,
+                     reinterpret_cast<cufftDoubleComplex*>(
+                         thrust::raw_pointer_cast(&D[0])),
+                     reinterpret_cast<cufftDoubleComplex*>(
+                         thrust::raw_pointer_cast(&D[0])),
+                     cuFFT_sign(T));
+        thrust::copy(D.begin(), D.end(), out_beg);
+        cufftDestroy(plan);
+    }
+
 }  // namespace gpfft

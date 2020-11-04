@@ -38,6 +38,9 @@ namespace gpfft
         template <FFT_type fft>
         void local_FFT();
 
+        template <FFT_type fft>
+        void local_2dFFT();
+
         parallel_buff_3D(const communicator& in_com,
                          const std::array<size_t, 3>& n)
             : com(in_com), N(n)
